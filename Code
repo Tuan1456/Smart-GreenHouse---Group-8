@@ -1,0 +1,70 @@
+#include <LiquidCrystal.h>
+
+LiquidCrystal lcd(13, 12, 11, 10, 8, 3);
+
+// --- Pin ---
+int ldrPin   = A1;
+int tmpPin   = A0;
+int gasPin   = A2;
+int lightPin = 7;
+int ledPin   = 9;
+int buzzer   = 4;
+int fanPin   = 6;
+
+// --- Ngưỡng ---
+float tempThreshold = 22.0;
+int lightThreshold  = 500;
+int gasThreshold    = 400;
+
+void setup() {
+  pinMode(lightPin, OUTPUT);
+  pinMode(ledPin,   OUTPUT);
+  pinMode(buzzer,   OUTPUT);
+  pinMode(fanPin,   OUTPUT);
+  lcd.begin(16, 2);
+  Serial.begin(9600);
+}
+
+void loop() {
+  int lightVal = analogRead(ldrPin);
+  int tmpRaw   = analogRead(tmpPin);
+  int gasVal   = analogRead(gasPin);
+
+  float voltage = tmpRaw * (5.0 / 1023.0);
+  float tempC   = (voltage - 0.5) * 100.0;
+
+  // Điều khiển bóng đèn
+  if (lightVal > lightThreshold)
+    digitalWrite(lightPin, LOW);
+  else
+    digitalWrite(lightPin, HIGH);
+
+  // Điều khiển LED + quạt
+  if (tempC > tempThreshold) {
+    digitalWrite(ledPin, HIGH);
+    analogWrite(fanPin, 255);
+  } else {
+    digitalWrite(ledPin, LOW);
+    analogWrite(fanPin, 0);
+  }
+
+  // Điều khiển còi
+  if (gasVal > gasThreshold)
+    digitalWrite(buzzer, HIGH);
+  else
+    digitalWrite(buzzer, LOW);
+
+  // Hiển thị LCD
+  lcd.setCursor(0, 0);
+  lcd.print("T:"); lcd.print(tempC, 1);
+  lcd.print("C L:"); lcd.print(lightVal);
+  lcd.setCursor(0, 1);
+  lcd.print("Gas:"); lcd.print(gasVal);
+
+  Serial.print("Anh sang: "); Serial.print(lightVal);
+  Serial.print(" | Nhiet do: "); Serial.print(tempC);
+  Serial.print(" C | Khi gas: "); Serial.println(gasVal);
+
+  delay(1000);
+  lcd.clear();  // xóa ở cuối
+}
